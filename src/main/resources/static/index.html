@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acervo — Catálogo de Livros</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <a class="pular" href="#conteudo">Ir para o conteúdo</a>
+
+    <header class="topo">
+        <div class="topo-interno">
+            <div class="marca">
+                <svg class="selo" viewBox="0 0 48 48" aria-hidden="true">
+                    <rect x="7" y="6" width="22" height="36" rx="2" fill="#c4a46a"/>
+                    <rect x="14" y="6" width="24" height="36" rx="2" fill="#fffaf3"/>
+                    <path d="M20 16h12M20 22h12M20 28h8" stroke="#1f4d3a" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                <div>
+                    <p class="sobretitulo">Biblioteca pessoal</p>
+                    <h1>Acervo</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="conteudo" class="conteudo">
+        <section class="painel" aria-labelledby="titulo-formulario">
+            <div class="painel-cabeca">
+                <h2 id="titulo-formulario">Fichário</h2>
+            </div>
+
+            <div class="busca">
+                <label for="busca-titulo">Nome do livro</label>
+                <div class="busca-linha">
+                    <input id="busca-titulo" type="search" maxlength="150" placeholder="Ex.: Dom Casmurro" autocomplete="off">
+                    <button type="button" id="botao-buscar" class="secundario">Buscar</button>
+                </div>
+                <div id="resultados-busca" class="resultados" hidden></div>
+                <div id="mais-resultados" class="mais-resultados" hidden>
+                    <button type="button" id="botao-mais" class="secundario">Carregar mais</button>
+                </div>
+            </div>
+
+            <form id="form-livro" novalidate>
+                <div class="selecao">
+                    <div class="capa-preview" id="capa-preview">
+                        <img id="capa-imagem" alt="" hidden referrerpolicy="no-referrer">
+                        <span id="capa-legenda" class="capa-legenda">Sem capa</span>
+                    </div>
+                    <div class="selecao-texto">
+                        <p class="opcional">Nome do livro</p>
+                        <p id="titulo-selecionado" class="titulo-selecionado">Nenhum livro selecionado</p>
+                        <div id="opcoes-capa" class="opcoes-capa" hidden>
+                            <p class="opcional">Escolha a capa</p>
+                            <div id="grade-capas" class="grade-capas"></div>
+                        </div>
+                        <button type="submit" id="botao-salvar" class="primario" disabled>Salvar no acervo</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="painel" aria-labelledby="titulo-lista">
+            <div class="painel-cabeca lista-cabeca">
+                <h2 id="titulo-lista">Acervo</h2>
+                <p id="total-livros" class="contador">0 livros</p>
+            </div>
+            <div class="busca-catalogo">
+                <div class="acoes-catalogo">
+                    <button type="button" id="botao-catalogo" class="secundario">Buscar livros catalogados</button>
+                    <div class="modo-exibicao" role="group" aria-label="Modo de exibição">
+                        <button type="button" id="modo-grade" class="modo-botao ativo" aria-pressed="true">Grade</button>
+                        <button type="button" id="modo-lista" class="modo-botao" aria-pressed="false">Lista</button>
+                    </div>
+                </div>
+                <div id="painel-catalogo" hidden>
+                    <label for="termo-catalogo">Buscar no acervo</label>
+                    <input id="termo-catalogo" type="search" maxlength="150" placeholder="Nome, autor, ISBN ou editora" autocomplete="off">
+                </div>
+            </div>
+            <div id="lista-livros" class="grade-acervo">
+                <p class="vazio">Carregando acervo...</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+    <dialog id="ficha-detalhe" class="ficha">
+        <article class="detalhe">
+            <div class="capa-detalhe">
+                <img id="detalhe-capa" alt="" hidden referrerpolicy="no-referrer">
+                <span id="detalhe-sem-capa" class="capa-legenda">Sem capa</span>
+            </div>
+            <div>
+                <h2 id="detalhe-titulo"></h2>
+                <dl>
+                    <div><dt>Autor</dt><dd id="detalhe-autor"></dd></div>
+                    <div><dt>Editora</dt><dd id="detalhe-editora"></dd></div>
+                    <div><dt>Ano de publicação</dt><dd id="detalhe-ano"></dd></div>
+                    <div><dt>Edição</dt><dd id="detalhe-edicao"></dd></div>
+                    <div><dt>ISBN</dt><dd id="detalhe-isbn"></dd></div>
+                    <div><dt>Páginas</dt><dd id="detalhe-paginas"></dd></div>
+                    <div><dt>Gênero</dt><dd id="detalhe-genero"></dd></div>
+                    <div>
+                        <dt>Sinopse</dt>
+                        <dd>
+                            <textarea id="detalhe-descricao" class="sinopse-edicao" rows="7" maxlength="2000"></textarea>
+                        </dd>
+                    </div>
+                </dl>
+                <div class="acoes">
+                    <button type="button" id="fechar-detalhe" class="secundario">Fechar</button>
+                    <button type="button" id="salvar-sinopse" class="primario">Salvar sinopse</button>
+                    <button type="button" id="excluir-detalhe" class="perigo">Excluir</button>
+                </div>
+            </div>
+        </article>
+    </dialog>
+
+    <dialog id="confirma-exclusao">
+        <form method="dialog">
+            <h2>Excluir livro</h2>
+            <p id="confirma-texto"></p>
+            <div class="acoes">
+                <button type="button" id="cancelar-exclusao" class="secundario">Cancelar</button>
+                <button type="button" id="confirmar-exclusao" class="perigo">Excluir</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
