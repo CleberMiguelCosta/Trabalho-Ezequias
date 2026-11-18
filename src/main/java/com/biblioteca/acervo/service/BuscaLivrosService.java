@@ -4,6 +4,7 @@ import com.biblioteca.acervo.dto.LivroBuscaDTO;
 import com.biblioteca.acervo.dto.PaginaBuscaDTO;
 import com.biblioteca.acervo.exception.ConsultaExternaException;
 import com.biblioteca.acervo.exception.DadosInvalidosException;
+import com.biblioteca.acervo.integracao.AmazonBooksCliente;
 import com.biblioteca.acervo.integracao.FonteIndisponivelException;
 import com.biblioteca.acervo.integracao.FonteLivros;
 import com.biblioteca.acervo.integracao.ObraExterna;
@@ -21,7 +22,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -43,9 +43,10 @@ public class BuscaLivrosService {
 
     private final FonteLivros googleBooks;
     private final FonteLivros openLibrary;
+    private final AmazonBooksCliente amazonBooks;
     private final LivroRepository livroRepository;
     private final ConcurrentHashMap<String, EntradaCache> cache = new ConcurrentHashMap<>();
-    private final ExecutorService consultas = Executors.newFixedThreadPool(2, runnable -> {
+    private final ExecutorService consultas = Executors.newFixedThreadPool(3, runnable -> {
         Thread thread = new Thread(runnable, "busca-livros");
         thread.setDaemon(true);
         return thread;
@@ -54,9 +55,11 @@ public class BuscaLivrosService {
     public BuscaLivrosService(
             @Qualifier("googleBooksCliente") FonteLivros googleBooks,
             @Qualifier("openLibraryCliente") FonteLivros openLibrary,
+            AmazonBooksCliente amazonBooks,
             LivroRepository livroRepository) {
         this.googleBooks = googleBooks;
         this.openLibrary = openLibrary;
+        this.amazonBooks = amazonBooks;
         this.livroRepository = livroRepository;
     }
 
@@ -83,18 +86,10 @@ public class BuscaLivrosService {
             throw new DadosInvalidosException("Informe um ISBN válido para complementar a ficha.");
         }
         ObraExterna atual = null;
-        try {
-            atual = openLibrary.buscarPorIsbn(normalizado).orElse(null);
-        } catch (FonteIndisponivelException ex) {
-            log.warn("Open Library indisponível no complemento do ISBN {}", normalizado);
-        }
-        try {
-            Optional<ObraExterna> google = googleBooks.buscarPorIsbn(normalizado);
-            if (google.isPresent()) {
-                atual = atual == null ? google.get() : atual.completarCom(google.get()).comCapas(google.get().capas());
-            }
-        } catch (FonteIndisponivelException ex) {
-            log.warn("Google Books indisponível no complemento do ISBN {}", normalizado);
+        atual = mesclarIsbn(atual, openLibrary, normalizado);
+        atual = mesclarIsbn(atual, googleBooks, normalizado);
+        if (amazonBooks != null && amazonBooks.habilitado()) {
+            atual = mesclarIsbn(atual, amazonBooks, normalizado);
         }
         if (atual == null || atual.titulo() == null || atual.titulo().isBlank()) {
             throw new DadosInvalidosException("Não foi possível complementar os dados desse ISBN.");
@@ -102,16 +97,36 @@ public class BuscaLivrosService {
         return toDto(atual);
     }
 
+    private ObraExterna mesclarIsbn(ObraExterna atual, FonteLivros fonte, String isbn) {
+        try {
+            Optional<ObraExterna> encontrada = fonte.buscarPorIsbn(isbn);
+            if (encontrada.isEmpty()) {
+                return atual;
+            }
+            ObraExterna outra = encontrada.get();
+            return atual == null ? outra : atual.completarCom(outra).comCapas(outra.capas());
+        } catch (FonteIndisponivelException ex) {
+            log.warn("{} indisponível no complemento do ISBN {}", fonte.nome(), isbn);
+            return atual;
+        }
+    }
+
     private PaginaBuscaDTO consultarPagina(String consulta, int pagina, int limite) {
         CompletableFuture<Consulta> googleFuture = CompletableFuture.supplyAsync(
                 () -> consultar(() -> googleBooks.buscarPorTitulo(consulta, pagina, limite)), consultas);
         CompletableFuture<Consulta> openFuture = CompletableFuture.supplyAsync(
                 () -> consultar(() -> openLibrary.buscarPorTitulo(consulta, pagina, limite)), consultas);
+        CompletableFuture<Consulta> amazonFuture = amazonBooks != null && amazonBooks.habilitado()
+                ? CompletableFuture.supplyAsync(
+                () -> consultar(() -> amazonBooks.buscarPorTitulo(consulta, pagina, Math.min(10, limite))), consultas)
+                : CompletableFuture.completedFuture(new Consulta(PaginaObras.vazia(), false));
 
         Consulta google = aguardar(googleFuture);
         Consulta open = aguardar(openFuture);
+        Consulta amazon = aguardar(amazonFuture);
 
-        if (google.falhou() && open.falhou()) {
+        boolean amazonAtiva = amazonBooks != null && amazonBooks.habilitado();
+        if (google.falhou() && open.falhou() && (!amazonAtiva || amazon.falhou())) {
             throw new ConsultaExternaException(FALHA_CONSULTA);
         }
 
@@ -122,15 +137,21 @@ public class BuscaLivrosService {
         if (!google.falhou()) {
             mescladas.addAll(google.pagina().obras());
         }
+        if (!amazon.falhou()) {
+            mescladas.addAll(amazon.pagina().obras());
+        }
 
         List<ObraExterna> obras = ordenarPorRelevancia(agruparEdicoes(mescladas), consulta);
         List<LivroBuscaDTO> itens = obras.stream().map(this::toDto).toList();
 
         int total = Math.max(
-                google.falhou() ? 0 : google.pagina().totalEstimado(),
-                open.falhou() ? 0 : open.pagina().totalEstimado());
+                Math.max(
+                        google.falhou() ? 0 : google.pagina().totalEstimado(),
+                        open.falhou() ? 0 : open.pagina().totalEstimado()),
+                amazon.falhou() ? 0 : amazon.pagina().totalEstimado());
         boolean temMais = (!google.falhou() && google.pagina().temMais())
-                || (!open.falhou() && open.pagina().temMais());
+                || (!open.falhou() && open.pagina().temMais())
+                || (!amazon.falhou() && amazon.pagina().temMais());
 
         return new PaginaBuscaDTO(itens, pagina, limite, temMais, total > 0 ? total : null);
     }
@@ -228,7 +249,6 @@ public class BuscaLivrosService {
             score += 200;
         }
 
-        // Penaliza títulos longos pouco relacionados (ensaios/críticas sobre a obra).
         if (titulo.length() > termo.length() * 3 && !titulo.startsWith(termo)) {
             score -= 120;
         }
@@ -244,6 +264,9 @@ public class BuscaLivrosService {
         }
         if (obra.popularidade() != null) {
             score += Math.min(300, obra.popularidade());
+        }
+        if (obra.origem() != null && obra.origem().contains("Amazon")) {
+            score += 20;
         }
         return score;
     }

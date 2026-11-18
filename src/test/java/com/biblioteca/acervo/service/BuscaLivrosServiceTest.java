@@ -41,7 +41,7 @@ class BuscaLivrosServiceTest {
     void preparar() {
         google = new FonteFalsa("Google Books");
         openLibrary = new FonteFalsa("Open Library");
-        service = new BuscaLivrosService(google, openLibrary, livroRepository);
+        service = new BuscaLivrosService(google, openLibrary, null, livroRepository);
     }
 
     @Test

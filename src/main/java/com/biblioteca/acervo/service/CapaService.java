@@ -166,6 +166,11 @@ public class CapaService {
                 || "books.googleusercontent.com".equals(host)
                 || host.endsWith(".googleusercontent.com")
                 || "archive.org".equals(host)
-                || host.endsWith(".archive.org");
+                || host.endsWith(".archive.org")
+                || "m.media-amazon.com".equals(host)
+                || host.endsWith(".media-amazon.com")
+                || host.endsWith(".ssl-images-amazon.com")
+                || "images-na.ssl-images-amazon.com".equals(host)
+                || "images-eu.ssl-images-amazon.com".equals(host);
     }
 }

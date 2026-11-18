@@ -25,6 +25,10 @@ class CapaServiceTest {
                 capaService.normalizar("https://lh3.googleusercontent.com/capa.jpg").getHost());
         assertEquals("ia601900.us.archive.org",
                 capaService.normalizar("https://ia601900.us.archive.org/view_archive.php?archive=1").getHost());
+        assertEquals("m.media-amazon.com",
+                capaService.normalizar("https://m.media-amazon.com/images/I/capa.jpg").getHost());
+        assertEquals("images-na.ssl-images-amazon.com",
+                capaService.normalizar("https://images-na.ssl-images-amazon.com/images/I/capa.jpg").getHost());
 
         assertThrows(DadosInvalidosException.class,
                 () -> capaService.normalizar("https://example.com/capa.jpg"));
