@@ -12,6 +12,7 @@ public record LivroResponseDTO(
         String edicao,
         Integer numeroPaginas,
         String descricao,
-        boolean temCapa
+        boolean temCapa,
+        String statusLeitura
 ) {
 }

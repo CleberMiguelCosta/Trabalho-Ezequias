@@ -3,6 +3,8 @@ package com.biblioteca.acervo.model;
 import com.biblioteca.acervo.LimitesLivro;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -60,6 +62,10 @@ public class Livro {
 
     @Column(name = "capa_tipo", length = 40)
     private String capaTipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_leitura", length = 20)
+    private StatusLeitura statusLeitura;
 
     public Long getId() {
         return id;
@@ -163,5 +169,13 @@ public class Livro {
 
     public void setCapaTipo(String capaTipo) {
         this.capaTipo = capaTipo;
+    }
+
+    public StatusLeitura getStatusLeitura() {
+        return statusLeitura;
+    }
+
+    public void setStatusLeitura(StatusLeitura statusLeitura) {
+        this.statusLeitura = statusLeitura;
     }
 }

@@ -4,6 +4,7 @@ import com.biblioteca.acervo.dto.LivroBuscaDTO;
 import com.biblioteca.acervo.dto.LivroRequestDTO;
 import com.biblioteca.acervo.dto.LivroResponseDTO;
 import com.biblioteca.acervo.dto.PaginaBuscaDTO;
+import com.biblioteca.acervo.dto.StatusLeituraRequestDTO;
 import com.biblioteca.acervo.service.BuscaLivrosService;
 import com.biblioteca.acervo.service.CapaArquivo;
 import com.biblioteca.acervo.service.LivroService;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -39,8 +41,10 @@ public class LivroController {
     }
 
     @GetMapping
-    public ResponseEntity<List<LivroResponseDTO>> listar(@RequestParam(required = false) String termo) {
-        return ResponseEntity.ok(livroService.listar(termo));
+    public ResponseEntity<List<LivroResponseDTO>> listar(
+            @RequestParam(required = false) String termo,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(livroService.listar(termo, status));
     }
 
     @GetMapping("/busca")
@@ -84,6 +88,12 @@ public class LivroController {
     public ResponseEntity<LivroResponseDTO> atualizar(@PathVariable Long id,
                                                        @Valid @RequestBody LivroRequestDTO dto) {
         return ResponseEntity.ok(livroService.atualizar(id, dto));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<LivroResponseDTO> atualizarStatus(@PathVariable Long id,
+                                                             @RequestBody StatusLeituraRequestDTO dto) {
+        return ResponseEntity.ok(livroService.atualizarStatus(id, dto == null ? null : dto.statusLeitura()));
     }
 
     @DeleteMapping("/{id}")

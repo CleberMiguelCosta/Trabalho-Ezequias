@@ -1,18 +1,24 @@
 package com.biblioteca.acervo.service;
 
+import com.biblioteca.acervo.dto.AutorAcervoDTO;
 import com.biblioteca.acervo.dto.LivroRequestDTO;
 import com.biblioteca.acervo.dto.LivroResponseDTO;
 import com.biblioteca.acervo.exception.DadosInvalidosException;
 import com.biblioteca.acervo.exception.RecursoNaoEncontradoException;
 import com.biblioteca.acervo.exception.RegraNegocioException;
 import com.biblioteca.acervo.model.Livro;
+import com.biblioteca.acervo.model.StatusLeitura;
 import com.biblioteca.acervo.repository.LivroRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class LivroService {
@@ -26,23 +32,65 @@ public class LivroService {
     }
 
     @Transactional(readOnly = true)
-    public List<LivroResponseDTO> listar(String termo) {
+    public List<LivroResponseDTO> listar(String termo, String status) {
+        StatusLeitura filtroStatus = interpretarFiltroStatus(status);
+        List<Livro> livros;
         if (termo == null || termo.isBlank()) {
-            return livroRepository.findAllByOrderByTituloAsc()
-                    .stream()
-                    .map(this::toResponse)
-                    .toList();
+            if (filtroStatus != null) {
+                livros = livroRepository.findByStatusLeituraOrderByTituloAsc(filtroStatus);
+            } else if ("nenhum".equalsIgnoreCase(status == null ? "" : status.trim())) {
+                livros = livroRepository.findByStatusLeituraIsNullOrderByTituloAsc();
+            } else {
+                livros = livroRepository.findAllByOrderByTituloAsc();
+            }
+        } else {
+            String consulta = termo.trim().replaceAll("\\s+", " ");
+            if (consulta.length() > 150) {
+                throw new DadosInvalidosException("A busca no acervo deve ter no máximo 150 caracteres.");
+            }
+            String like = "%" + escaparLike(consulta.toLowerCase(Locale.ROOT)) + "%";
+            String isbn = "%" + escaparLike(consulta.replaceAll("[\\s-]", "").toLowerCase(Locale.ROOT)) + "%";
+            livros = livroRepository.buscarNoAcervo(like, isbn);
+            if (filtroStatus != null) {
+                livros = livros.stream().filter(l -> filtroStatus.equals(l.getStatusLeitura())).toList();
+            } else if ("nenhum".equalsIgnoreCase(status == null ? "" : status.trim())) {
+                livros = livros.stream().filter(l -> l.getStatusLeitura() == null).toList();
+            }
         }
-        String consulta = termo.trim().replaceAll("\\s+", " ");
-        if (consulta.length() > 150) {
-            throw new DadosInvalidosException("A busca no acervo deve ter no máximo 150 caracteres.");
+        return livros.stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AutorAcervoDTO> listarAutores() {
+        Map<String, AutorAcervoDTO> unicos = new LinkedHashMap<>();
+        for (Object[] linha : livroRepository.contarAutores()) {
+            String nome = limparOpcional((String) linha[0]);
+            if (nome == null) {
+                continue;
+            }
+            long total = ((Number) linha[1]).longValue();
+            String chave = nome.toLowerCase(Locale.ROOT);
+            AutorAcervoDTO existente = unicos.get(chave);
+            if (existente == null) {
+                unicos.put(chave, new AutorAcervoDTO(nome, total));
+            } else {
+                unicos.put(chave, new AutorAcervoDTO(existente.nome(), existente.livros() + total));
+            }
         }
-        String like = "%" + escaparLike(consulta.toLowerCase(Locale.ROOT)) + "%";
-        String isbn = "%" + escaparLike(consulta.replaceAll("[\\s-]", "").toLowerCase(Locale.ROOT)) + "%";
-        return livroRepository.buscarNoAcervo(like, isbn)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        List<AutorAcervoDTO> autores = new ArrayList<>(unicos.values());
+        autores.sort(Comparator.comparing(AutorAcervoDTO::nome, String.CASE_INSENSITIVE_ORDER));
+        return autores;
+    }
+
+    @Transactional
+    public LivroResponseDTO atualizarStatus(Long id, String status) {
+        Livro livro = buscarEntidade(id);
+        if (status != null && status.isBlank()) {
+            livro.setStatusLeitura(null);
+        } else {
+            livro.setStatusLeitura(StatusLeitura.de(status));
+        }
+        return toResponse(livroRepository.save(livro));
     }
 
     @Transactional(readOnly = true)
@@ -145,10 +193,24 @@ public class LivroService {
         livro.setEdicao(limparOpcional(dto.edicao()));
         livro.setNumeroPaginas(dto.numeroPaginas());
         livro.setDescricao(limparOpcional(dto.descricao()));
+        if (dto.statusLeitura() != null) {
+            if (dto.statusLeitura().isBlank()) {
+                livro.setStatusLeitura(null);
+            } else {
+                livro.setStatusLeitura(StatusLeitura.de(dto.statusLeitura()));
+            }
+        }
         capaService.importar(dto.capaOrigem()).ifPresent(capa -> {
             livro.setCapa(capa.conteudo());
             livro.setCapaTipo(capa.tipo());
         });
+    }
+
+    private StatusLeitura interpretarFiltroStatus(String status) {
+        if (status == null || status.isBlank() || "nenhum".equalsIgnoreCase(status.trim())) {
+            return null;
+        }
+        return StatusLeitura.de(status);
     }
 
     private String escaparLike(String valor) {
@@ -175,7 +237,8 @@ public class LivroService {
                 livro.getEdicao(),
                 livro.getNumeroPaginas(),
                 livro.getDescricao(),
-                livro.getCapa() != null && livro.getCapa().length > 0
+                livro.getCapa() != null && livro.getCapa().length > 0,
+                livro.getStatusLeitura() == null ? null : livro.getStatusLeitura().getCodigo()
         );
     }
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Acervo — Catálogo de Livros</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
     <a class="pular" href="#conteudo">Ir para o conteúdo</a>
@@ -22,68 +22,149 @@
                     <h1>Acervo</h1>
                 </div>
             </div>
+            <nav class="abas" role="tablist" aria-label="Seções do Acervo">
+                <button type="button" class="aba ativo" role="tab" id="aba-acervo" aria-selected="true" aria-controls="painel-acervo" data-aba="acervo">Acervo</button>
+                <button type="button" class="aba" role="tab" id="aba-autores" aria-selected="false" aria-controls="painel-autores" data-aba="autores">Autores</button>
+                <button type="button" class="aba" role="tab" id="aba-metas" aria-selected="false" aria-controls="painel-metas" data-aba="metas">Metas de leitura</button>
+            </nav>
         </div>
     </header>
 
     <main id="conteudo" class="conteudo">
-        <section class="painel" aria-labelledby="titulo-formulario">
-            <div class="painel-cabeca">
-                <h2 id="titulo-formulario">Fichário</h2>
-            </div>
-
-            <div class="busca">
-                <label for="busca-titulo">Nome do livro</label>
-                <div class="busca-linha">
-                    <input id="busca-titulo" type="search" maxlength="150" placeholder="Ex.: Dom Casmurro" autocomplete="off">
-                    <button type="button" id="botao-buscar" class="secundario">Buscar</button>
+        <div id="painel-acervo" class="aba-painel ativo" role="tabpanel" aria-labelledby="aba-acervo">
+            <section class="painel" aria-labelledby="titulo-formulario">
+                <div class="painel-cabeca">
+                    <h2 id="titulo-formulario">Fichário</h2>
                 </div>
-                <div id="resultados-busca" class="resultados" hidden></div>
-                <div id="mais-resultados" class="mais-resultados" hidden>
-                    <button type="button" id="botao-mais" class="secundario">Carregar mais</button>
-                </div>
-            </div>
 
-            <form id="form-livro" novalidate>
-                <div class="selecao">
-                    <div class="capa-preview" id="capa-preview">
-                        <img id="capa-imagem" alt="" hidden referrerpolicy="no-referrer">
-                        <span id="capa-legenda" class="capa-legenda">Sem capa</span>
+                <div class="busca">
+                    <label for="busca-titulo">Nome do livro</label>
+                    <div class="busca-linha">
+                        <input id="busca-titulo" type="search" maxlength="150" placeholder="Ex.: Dom Casmurro" autocomplete="off">
+                        <button type="button" id="botao-buscar" class="secundario">Buscar</button>
                     </div>
-                    <div class="selecao-texto">
-                        <p class="opcional">Nome do livro</p>
-                        <p id="titulo-selecionado" class="titulo-selecionado">Nenhum livro selecionado</p>
-                        <div id="opcoes-capa" class="opcoes-capa" hidden>
-                            <p class="opcional">Escolha a capa</p>
-                            <div id="grade-capas" class="grade-capas"></div>
+                    <div id="resultados-busca" class="resultados" hidden></div>
+                    <div id="mais-resultados" class="mais-resultados" hidden>
+                        <button type="button" id="botao-mais" class="secundario">Carregar mais</button>
+                    </div>
+                </div>
+
+                <form id="form-livro" novalidate>
+                    <div class="selecao">
+                        <div class="capa-preview" id="capa-preview">
+                            <img id="capa-imagem" alt="" hidden referrerpolicy="no-referrer">
+                            <span id="capa-legenda" class="capa-legenda">Sem capa</span>
                         </div>
-                        <button type="submit" id="botao-salvar" class="primario" disabled>Salvar no acervo</button>
+                        <div class="selecao-texto">
+                            <p class="opcional">Nome do livro</p>
+                            <p id="titulo-selecionado" class="titulo-selecionado">Nenhum livro selecionado</p>
+                            <div id="opcoes-capa" class="opcoes-capa" hidden>
+                                <p class="opcional">Escolha a capa</p>
+                                <div id="grade-capas" class="grade-capas"></div>
+                            </div>
+                            <button type="submit" id="botao-salvar" class="primario" disabled>Salvar no acervo</button>
+                        </div>
                     </div>
-                </div>
-            </form>
-        </section>
+                </form>
+            </section>
 
-        <section class="painel" aria-labelledby="titulo-lista">
-            <div class="painel-cabeca lista-cabeca">
-                <h2 id="titulo-lista">Acervo</h2>
-                <p id="total-livros" class="contador">0 livros</p>
-            </div>
-            <div class="busca-catalogo">
-                <div class="acoes-catalogo">
-                    <button type="button" id="botao-catalogo" class="secundario">Buscar livros catalogados</button>
-                    <div class="modo-exibicao" role="group" aria-label="Modo de exibição">
-                        <button type="button" id="modo-grade" class="modo-botao ativo" aria-pressed="true">Grade</button>
-                        <button type="button" id="modo-lista" class="modo-botao" aria-pressed="false">Lista</button>
+            <section class="painel" aria-labelledby="titulo-lista">
+                <div class="painel-cabeca lista-cabeca">
+                    <h2 id="titulo-lista">Acervo</h2>
+                    <p id="total-livros" class="contador">0 livros</p>
+                </div>
+                <div class="busca-catalogo">
+                    <div class="acoes-catalogo">
+                        <button type="button" id="botao-catalogo" class="secundario">Buscar livros catalogados</button>
+                        <div class="modo-exibicao" role="group" aria-label="Modo de exibição">
+                            <button type="button" id="modo-grade" class="modo-botao ativo" aria-pressed="true">Grade</button>
+                            <button type="button" id="modo-lista" class="modo-botao" aria-pressed="false">Lista</button>
+                        </div>
+                    </div>
+                    <div id="painel-catalogo" hidden>
+                        <label for="termo-catalogo">Buscar no acervo</label>
+                        <input id="termo-catalogo" type="search" maxlength="150" placeholder="Nome, autor, ISBN ou editora" autocomplete="off">
                     </div>
                 </div>
-                <div id="painel-catalogo" hidden>
-                    <label for="termo-catalogo">Buscar no acervo</label>
-                    <input id="termo-catalogo" type="search" maxlength="150" placeholder="Nome, autor, ISBN ou editora" autocomplete="off">
+                <div id="lista-livros" class="grade-acervo">
+                    <p class="vazio">Carregando acervo...</p>
                 </div>
-            </div>
-            <div id="lista-livros" class="grade-acervo">
-                <p class="vazio">Carregando acervo...</p>
-            </div>
-        </section>
+            </section>
+        </div>
+
+        <div id="painel-autores" class="aba-painel" role="tabpanel" aria-labelledby="aba-autores" hidden>
+            <section class="painel painel-largo" aria-labelledby="titulo-autores">
+                <div class="painel-cabeca">
+                    <h2 id="titulo-autores">Autores e Wikipedia</h2>
+                    <p class="modo">Busque um escritor ou escolha um autor já cadastrado no acervo. A biografia vem da Wikipedia em português.</p>
+                </div>
+
+                <div class="busca">
+                    <label for="busca-autor">Nome do autor</label>
+                    <div class="busca-linha">
+                        <input id="busca-autor" type="search" maxlength="150" placeholder="Ex.: Machado de Assis" autocomplete="off">
+                        <button type="button" id="botao-buscar-autor" class="secundario">Buscar biografia</button>
+                    </div>
+                </div>
+
+                <div class="autores-layout">
+                    <aside class="autores-lista-painel" aria-labelledby="titulo-autores-acervo">
+                        <h3 id="titulo-autores-acervo">No acervo</h3>
+                        <p id="total-autores" class="contador">0 autores</p>
+                        <div id="lista-autores" class="lista-autores">
+                            <p class="vazio">Carregando autores...</p>
+                        </div>
+                    </aside>
+
+                    <article id="biografia-autor" class="biografia" aria-live="polite">
+                        <p class="vazio">Selecione um autor do acervo ou busque um nome para ver a biografia.</p>
+                    </article>
+                </div>
+            </section>
+        </div>
+
+        <div id="painel-metas" class="aba-painel" role="tabpanel" aria-labelledby="aba-metas" hidden>
+            <section class="painel painel-largo" aria-labelledby="titulo-metas">
+                <div class="painel-cabeca lista-cabeca">
+                    <div>
+                        <h2 id="titulo-metas">Metas de leitura</h2>
+                        <p class="modo">Etiquete os livros do acervo como Quero ler, Lendo ou Lido.</p>
+                    </div>
+                    <p id="resumo-metas" class="contador">0 etiquetados</p>
+                </div>
+
+                <div class="metas-colunas">
+                    <section class="meta-coluna" aria-labelledby="meta-quero">
+                        <div class="meta-cabeca">
+                            <h3 id="meta-quero">Quero ler</h3>
+                            <span id="contagem-quero_ler" class="selo-meta">0</span>
+                        </div>
+                        <div id="coluna-quero_ler" class="meta-lista"></div>
+                    </section>
+                    <section class="meta-coluna" aria-labelledby="meta-lendo">
+                        <div class="meta-cabeca">
+                            <h3 id="meta-lendo">Lendo</h3>
+                            <span id="contagem-lendo" class="selo-meta">0</span>
+                        </div>
+                        <div id="coluna-lendo" class="meta-lista"></div>
+                    </section>
+                    <section class="meta-coluna" aria-labelledby="meta-lido">
+                        <div class="meta-cabeca">
+                            <h3 id="meta-lido">Lido</h3>
+                            <span id="contagem-lido" class="selo-meta">0</span>
+                        </div>
+                        <div id="coluna-lido" class="meta-lista"></div>
+                    </section>
+                    <section class="meta-coluna" aria-labelledby="meta-sem">
+                        <div class="meta-cabeca">
+                            <h3 id="meta-sem">Sem etiqueta</h3>
+                            <span id="contagem-sem" class="selo-meta">0</span>
+                        </div>
+                        <div id="coluna-sem" class="meta-lista"></div>
+                    </section>
+                </div>
+            </section>
+        </div>
     </main>
 
     <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
@@ -104,6 +185,12 @@
                     <div><dt>ISBN</dt><dd id="detalhe-isbn"></dd></div>
                     <div><dt>Páginas</dt><dd id="detalhe-paginas"></dd></div>
                     <div><dt>Gênero</dt><dd id="detalhe-genero"></dd></div>
+                    <div>
+                        <dt>Meta de leitura</dt>
+                        <dd>
+                            <div id="detalhe-status" class="status-grupo" role="group" aria-label="Status de leitura"></div>
+                        </dd>
+                    </div>
                     <div>
                         <dt>Sinopse</dt>
                         <dd>
@@ -131,6 +218,6 @@
         </form>
     </dialog>
 
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=3"></script>
 </body>
 </html>

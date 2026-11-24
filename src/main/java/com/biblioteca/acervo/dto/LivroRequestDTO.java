@@ -42,6 +42,8 @@ public record LivroRequestDTO(
         String descricao,
 
         @Size(max = LimitesLivro.CAPA_ORIGEM, message = "A origem da capa é inválida.")
-        String capaOrigem
+        String capaOrigem,
+
+        String statusLeitura
 ) {
 }

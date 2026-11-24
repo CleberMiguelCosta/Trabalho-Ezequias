@@ -1,5 +1,11 @@
 const API = "/api/livros";
+const API_AUTORES = "/api/autores";
 const LIMITE_BUSCA = 12;
+const STATUS_LEITURA = [
+    { codigo: "quero_ler", rotulo: "Quero ler" },
+    { codigo: "lendo", rotulo: "Lendo" },
+    { codigo: "lido", rotulo: "Lido" }
+];
 
 const form = document.getElementById("form-livro");
 const lista = document.getElementById("lista-livros");
@@ -23,11 +29,20 @@ const ficha = document.getElementById("ficha-detalhe");
 const detalheCapa = document.getElementById("detalhe-capa");
 const detalheSemCapa = document.getElementById("detalhe-sem-capa");
 const detalheDescricao = document.getElementById("detalhe-descricao");
+const detalheStatus = document.getElementById("detalhe-status");
 const dialog = document.getElementById("confirma-exclusao");
 const confirmaTexto = document.getElementById("confirma-texto");
+const buscaAutor = document.getElementById("busca-autor");
+const botaoBuscarAutor = document.getElementById("botao-buscar-autor");
+const listaAutores = document.getElementById("lista-autores");
+const totalAutores = document.getElementById("total-autores");
+const biografiaAutor = document.getElementById("biografia-autor");
+const resumoMetas = document.getElementById("resumo-metas");
 
 let livrosCache = [];
+let acervoCompleto = [];
 let resultadosCache = [];
+let autoresCache = [];
 let selecionado = null;
 let capaEscolhida = null;
 let fichaAberta = null;
@@ -44,6 +59,9 @@ let buscandoMais = false;
 let buscaDebounce = null;
 let buscaAbort = null;
 let buscaSeq = 0;
+let autorSelecionado = null;
+let wikiAbort = null;
+let abaAtual = localStorage.getItem("acervo.aba") || "acervo";
 
 document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", salvarLivro);
@@ -93,6 +111,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("excluir-detalhe").addEventListener("click", pedirExclusao);
     document.getElementById("cancelar-exclusao").addEventListener("click", () => dialog.close());
     document.getElementById("confirmar-exclusao").addEventListener("click", confirmarExclusao);
+    detalheStatus.addEventListener("click", aoClicarStatusDetalhe);
+    document.querySelector(".abas").addEventListener("click", aoTrocarAba);
+    botaoBuscarAutor.addEventListener("click", () => buscarBiografia(buscaAutor.value.trim()));
+    buscaAutor.addEventListener("keydown", (evento) => {
+        if (evento.key === "Enter") {
+            evento.preventDefault();
+            buscarBiografia(buscaAutor.value.trim());
+        }
+    });
+    listaAutores.addEventListener("click", aoEscolherAutorAcervo);
+    document.getElementById("painel-metas").addEventListener("click", aoClicarMetas);
     dialog.addEventListener("close", () => {
         exclusaoPendente = null;
     });
@@ -111,8 +140,46 @@ document.addEventListener("DOMContentLoaded", () => {
         capaLegenda.hidden = false;
         capaLegenda.textContent = "Capa indisponível";
     });
+    mostrarAba(abaAtual);
     carregarLivros();
 });
+
+function aoTrocarAba(evento) {
+    const botao = evento.target.closest("button[data-aba]");
+    if (!botao) {
+        return;
+    }
+    mostrarAba(botao.dataset.aba);
+}
+
+function mostrarAba(nome) {
+    const abas = ["acervo", "autores", "metas"];
+    const escolhida = abas.includes(nome) ? nome : "acervo";
+    abaAtual = escolhida;
+    localStorage.setItem("acervo.aba", escolhida);
+
+    document.querySelectorAll(".aba").forEach((botao) => {
+        const ativa = botao.dataset.aba === escolhida;
+        botao.classList.toggle("ativo", ativa);
+        botao.setAttribute("aria-selected", String(ativa));
+    });
+    document.querySelectorAll(".aba-painel").forEach((painel) => {
+        const ativa = painel.id === `painel-${escolhida}`;
+        painel.classList.toggle("ativo", ativa);
+        if (ativa) {
+            painel.removeAttribute("hidden");
+        } else {
+            painel.setAttribute("hidden", "");
+        }
+    });
+
+    if (escolhida === "autores") {
+        carregarAutores();
+    }
+    if (escolhida === "metas") {
+        renderizarMetas(acervoCompleto.length ? acervoCompleto : livrosCache);
+    }
+}
 
 async function carregarLivros(termo = "") {
     const primeira = lista.querySelector(".cartao") === null && !filtrandoAcervo;
@@ -124,10 +191,22 @@ async function carregarLivros(termo = "") {
         const livros = await solicitar(caminho);
         filtrandoAcervo = termo !== "";
         renderizar(Array.isArray(livros) ? livros : [], termo);
+        if (!filtrandoAcervo) {
+            acervoCompleto = [...livrosCache];
+        } else {
+            const todos = await solicitar(API);
+            acervoCompleto = Array.isArray(todos) ? todos : [];
+        }
+        renderizarMetas(acervoCompleto);
+        if (abaAtual === "autores") {
+            carregarAutores();
+        }
     } catch (erro) {
         livrosCache = [];
+        acervoCompleto = [];
         atualizarContador(0);
         lista.innerHTML = '<p class="vazio">Não foi possível carregar o acervo.</p>';
+        renderizarMetas([]);
         mostrarAviso(erro.message, "erro");
     }
 }
@@ -448,10 +527,12 @@ async function salvarLivro(evento) {
 
 async function montarCadastro(obra) {
     let quantidade = 1;
+    let statusLeitura = null;
     if (obra.jaCadastrado && obra.idExistente) {
         const atual = livrosCache.find((item) => item.id === obra.idExistente)
             || await solicitar(`${API}/${obra.idExistente}`);
         quantidade = atual.quantidade ?? 1;
+        statusLeitura = atual.statusLeitura || null;
     }
     return {
         titulo: obra.titulo,
@@ -464,7 +545,8 @@ async function montarCadastro(obra) {
         edicao: obra.edicao || null,
         numeroPaginas: obra.numeroPaginas ?? null,
         descricao: obra.descricao || null,
-        capaOrigem: capaEscolhida || obra.capaUrl || null
+        capaOrigem: capaEscolhida || obra.capaUrl || null,
+        statusLeitura
     };
 }
 
@@ -530,6 +612,7 @@ function abrirFicha(livro) {
     document.getElementById("detalhe-paginas").textContent = texto(livro.numeroPaginas);
     document.getElementById("detalhe-genero").textContent = texto(livro.genero);
     detalheDescricao.value = livro.descricao || "";
+    renderizarBotoesStatus(detalheStatus, livro.statusLeitura || null, livro.id);
     if (livro.temCapa) {
         detalheCapa.alt = `Capa de ${livro.titulo}`;
         detalheCapa.src = `${API}/${livro.id}/capa`;
@@ -563,14 +646,12 @@ async function salvarSinopse() {
                 edicao: fichaAberta.edicao || null,
                 numeroPaginas: fichaAberta.numeroPaginas ?? null,
                 descricao: detalheDescricao.value.trim() || null,
-                capaOrigem: null
+                capaOrigem: null,
+                statusLeitura: fichaAberta.statusLeitura || null
             }
         });
         fichaAberta = atualizado;
-        const idx = livrosCache.findIndex((item) => item.id === atualizado.id);
-        if (idx >= 0) {
-            livrosCache[idx] = atualizado;
-        }
+        sincronizarLivroLocal(atualizado);
         mostrarAviso("Sinopse atualizada.", "sucesso");
     } catch (erro) {
         mostrarAviso(erro.message, "erro");
@@ -686,4 +767,227 @@ function escapar(valor) {
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;");
+}
+
+function sincronizarLivroLocal(atualizado) {
+    const idx = livrosCache.findIndex((item) => item.id === atualizado.id);
+    if (idx >= 0) {
+        livrosCache[idx] = atualizado;
+    }
+    const idxCompleto = acervoCompleto.findIndex((item) => item.id === atualizado.id);
+    if (idxCompleto >= 0) {
+        acervoCompleto[idxCompleto] = atualizado;
+    } else {
+        acervoCompleto.push(atualizado);
+    }
+    renderizar(livrosCache, termoAcervoAtual);
+    renderizarMetas(acervoCompleto);
+    if (fichaAberta && fichaAberta.id === atualizado.id) {
+        fichaAberta = atualizado;
+        renderizarBotoesStatus(detalheStatus, atualizado.statusLeitura || null, atualizado.id);
+    }
+}
+
+function renderizarBotoesStatus(container, statusAtual, livroId) {
+    const botoes = STATUS_LEITURA.map((item) => `
+        <button type="button" class="status-botao${item.codigo === statusAtual ? " ativo" : ""}"
+            data-status="${item.codigo}" data-id="${livroId}">${item.rotulo}</button>
+    `).join("");
+    container.innerHTML = `
+        ${botoes}
+        <button type="button" class="status-botao${!statusAtual ? " ativo" : ""}"
+            data-status="" data-id="${livroId}">Sem etiqueta</button>
+    `;
+}
+
+async function aoClicarStatusDetalhe(evento) {
+    const botao = evento.target.closest("button[data-id][data-status]");
+    if (!botao || !fichaAberta) {
+        return;
+    }
+    await definirStatusLeitura(Number(botao.dataset.id), botao.dataset.status || null, botao);
+}
+
+async function aoClicarMetas(evento) {
+    const botao = evento.target.closest("button[data-id][data-status]");
+    if (!botao) {
+        return;
+    }
+    await definirStatusLeitura(Number(botao.dataset.id), botao.dataset.status || null, botao);
+}
+
+async function definirStatusLeitura(id, status, botaoOrigem) {
+    if (botaoOrigem) {
+        botaoOrigem.disabled = true;
+    }
+    try {
+        const atualizado = await solicitar(`${API}/${id}/status`, {
+            method: "PATCH",
+            body: { statusLeitura: status }
+        });
+        sincronizarLivroLocal(atualizado);
+        mostrarAviso("Meta de leitura atualizada.", "sucesso");
+    } catch (erro) {
+        mostrarAviso(erro.message, "erro");
+        if (botaoOrigem) {
+            botaoOrigem.disabled = false;
+        }
+    }
+}
+
+function renderizarMetas(livros) {
+    const grupos = {
+        quero_ler: [],
+        lendo: [],
+        lido: [],
+        sem: []
+    };
+    for (const livro of livros) {
+        if (livro.statusLeitura && grupos[livro.statusLeitura]) {
+            grupos[livro.statusLeitura].push(livro);
+        } else {
+            grupos.sem.push(livro);
+        }
+    }
+
+    document.getElementById("coluna-quero_ler").innerHTML = htmlMetaLista(grupos.quero_ler, "quero_ler");
+    document.getElementById("coluna-lendo").innerHTML = htmlMetaLista(grupos.lendo, "lendo");
+    document.getElementById("coluna-lido").innerHTML = htmlMetaLista(grupos.lido, "lido");
+    document.getElementById("coluna-sem").innerHTML = htmlMetaLista(grupos.sem, null);
+
+    document.getElementById("contagem-quero_ler").textContent = String(grupos.quero_ler.length);
+    document.getElementById("contagem-lendo").textContent = String(grupos.lendo.length);
+    document.getElementById("contagem-lido").textContent = String(grupos.lido.length);
+    document.getElementById("contagem-sem").textContent = String(grupos.sem.length);
+
+    const etiquetados = grupos.quero_ler.length + grupos.lendo.length + grupos.lido.length;
+    resumoMetas.textContent = etiquetados === 1 ? "1 etiquetado" : `${etiquetados} etiquetados`;
+}
+
+function htmlMetaLista(livros, statusColuna) {
+    if (livros.length === 0) {
+        return '<p class="vazio">Nenhum livro nesta lista.</p>';
+    }
+    return livros.map((livro) => {
+        const capa = livro.temCapa
+            ? `<img src="${API}/${livro.id}/capa" alt="" referrerpolicy="no-referrer">`
+            : '<span class="capa-cartao" aria-hidden="true"></span>';
+        return `
+            <article class="meta-card">
+                ${capa}
+                <div>
+                    <span class="meta-titulo">${escapar(livro.titulo)}</span>
+                    <span class="meta-autor">${escapar(livro.autor || "Autor não informado")}</span>
+                    <div class="status-grupo">
+                        ${STATUS_LEITURA.map((item) => `
+                            <button type="button" class="status-botao${item.codigo === livro.statusLeitura ? " ativo" : ""}"
+                                data-status="${item.codigo}" data-id="${livro.id}">${item.rotulo}</button>
+                        `).join("")}
+                        ${statusColuna ? `
+                            <button type="button" class="status-botao" data-status="" data-id="${livro.id}">Limpar</button>
+                        ` : ""}
+                    </div>
+                </div>
+            </article>`;
+    }).join("");
+}
+
+async function carregarAutores() {
+    try {
+        const autores = await solicitar(API_AUTORES);
+        autoresCache = Array.isArray(autores) ? autores : [];
+        renderizarAutores(autoresCache);
+    } catch (erro) {
+        autoresCache = [];
+        listaAutores.innerHTML = '<p class="vazio">Não foi possível carregar os autores do acervo.</p>';
+        totalAutores.textContent = "0 autores";
+        mostrarAviso(erro.message, "erro");
+    }
+}
+
+function renderizarAutores(autores) {
+    totalAutores.textContent = autores.length === 1 ? "1 autor" : `${autores.length} autores`;
+    if (autores.length === 0) {
+        listaAutores.innerHTML = '<p class="vazio">Nenhum autor cadastrado no acervo.</p>';
+        return;
+    }
+    listaAutores.innerHTML = autores.map((autor) => {
+        const selecionadoClasse = autorSelecionado && autorSelecionado.toLowerCase() === autor.nome.toLowerCase()
+            ? " selecionado"
+            : "";
+        const livros = autor.livros === 1 ? "1 livro" : `${autor.livros} livros`;
+        return `
+            <button type="button" class="autor-item${selecionadoClasse}" data-autor="${escapar(autor.nome)}">
+                <span class="autor-nome">${escapar(autor.nome)}</span>
+                <span class="autor-meta">${livros}</span>
+            </button>`;
+    }).join("");
+}
+
+function aoEscolherAutorAcervo(evento) {
+    const botao = evento.target.closest("button[data-autor]");
+    if (!botao) {
+        return;
+    }
+    const nome = botao.dataset.autor;
+    buscaAutor.value = nome;
+    buscarBiografia(nome);
+}
+
+async function buscarBiografia(nome) {
+    const consulta = (nome || "").trim();
+    if (consulta.length < 2) {
+        mostrarAviso("Informe ao menos 2 caracteres do nome do autor.", "erro");
+        return;
+    }
+    autorSelecionado = consulta;
+    renderizarAutores(autoresCache);
+    if (wikiAbort) {
+        wikiAbort.abort();
+    }
+    wikiAbort = new AbortController();
+    botaoBuscarAutor.disabled = true;
+    biografiaAutor.innerHTML = '<p class="vazio">Consultando a Wikipedia...</p>';
+    try {
+        const bio = await solicitar(`${API_AUTORES}/wiki?${new URLSearchParams({ nome: consulta })}`, {
+            signal: wikiAbort.signal
+        });
+        renderizarBiografia(bio, consulta);
+    } catch (erro) {
+        if (erro.name === "AbortError") {
+            return;
+        }
+        biografiaAutor.innerHTML = `<p class="vazio">${escapar(erro.message)}</p>`;
+        mostrarAviso(erro.message, "erro");
+    } finally {
+        botaoBuscarAutor.disabled = false;
+    }
+}
+
+function renderizarBiografia(bio, consulta) {
+    if (!bio || !bio.encontrado) {
+        biografiaAutor.innerHTML = `
+            <p class="vazio">Não encontramos uma biografia na Wikipedia em português para “${escapar(consulta)}”.</p>`;
+        return;
+    }
+    const foto = bio.imagemUrl
+        ? `<img class="bio-foto" src="${escapar(bio.imagemUrl)}" alt="" referrerpolicy="no-referrer">`
+        : '<div class="bio-foto vazia">Sem imagem</div>';
+    const descricao = bio.descricao
+        ? `<p class="bio-descricao">${escapar(bio.descricao)}</p>`
+        : "";
+    const link = bio.paginaUrl
+        ? `<a class="bio-link" href="${escapar(bio.paginaUrl)}" target="_blank" rel="noopener noreferrer">Abrir na Wikipedia</a>`
+        : "";
+    biografiaAutor.innerHTML = `
+        <div class="bio-cabeca">
+            ${foto}
+            <div>
+                <h3 class="bio-titulo">${escapar(bio.titulo || consulta)}</h3>
+                ${descricao}
+                ${link}
+            </div>
+        </div>
+        <p class="bio-extrato">${escapar(bio.extrato || "")}</p>
+    `;
 }
