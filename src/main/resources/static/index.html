@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acervo — Catálogo de Livros</title>
+    <link rel="stylesheet" href="css/styles.css?v=5">
+</head>
+<body>
+    <a class="pular" href="#conteudo">Ir para o conteúdo</a>
+
+    <div class="app">
+        <aside class="barra-lateral" aria-label="Navegação principal">
+            <div class="barra-topo">
+                <div class="marca">
+                    <svg class="selo" viewBox="0 0 48 48" aria-hidden="true">
+                        <rect x="7" y="6" width="22" height="36" rx="2" fill="#c4a46a"/>
+                        <rect x="14" y="6" width="24" height="36" rx="2" fill="#fffaf3"/>
+                        <path d="M20 16h12M20 22h12M20 28h8" stroke="#1f4d3a" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    <div>
+                        <p class="sobretitulo">Biblioteca pessoal</p>
+                        <h1>Acervo</h1>
+                    </div>
+                </div>
+
+                <nav class="abas" role="tablist" aria-label="Seções do Acervo" aria-orientation="vertical">
+                    <button type="button" class="aba ativo" role="tab" id="aba-acervo" aria-selected="true" aria-controls="painel-acervo" data-aba="acervo">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7v14H4zm9 0h7v6h-7zm0 8h7v6h-7z" fill="currentColor"/></svg>
+                        <span>Acervo</span>
+                    </button>
+                    <button type="button" class="aba" role="tab" id="aba-autores" aria-selected="false" aria-controls="painel-autores" data-aba="autores">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z" fill="currentColor"/></svg>
+                        <span>Autores</span>
+                    </button>
+                    <button type="button" class="aba" role="tab" id="aba-metas" aria-selected="false" aria-controls="painel-metas" data-aba="metas">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 3a7 7 0 1 1-7 7 7 7 0 0 1 7-7zm0 3a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 2.5A1.5 1.5 0 1 1 10.5 12 1.5 1.5 0 0 1 12 10.5z" fill="currentColor"/></svg>
+                        <span>Metas de leitura</span>
+                    </button>
+                    <button type="button" class="aba" role="tab" id="aba-anotacoes" aria-selected="false" aria-controls="painel-anotacoes" data-aba="anotacoes">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11a2 2 0 0 1 2 2v11l-5 5H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4h9v2H7V7zm0 4h9v2H7v-2zm0 4h5v2H7v-2z" fill="currentColor"/></svg>
+                        <span>Anotações</span>
+                    </button>
+                    <button type="button" class="aba" role="tab" id="aba-favoritos" aria-selected="false" aria-controls="painel-favoritos" data-aba="favoritos">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.7-4.3-9.2-8.1C1 10.2 1.6 6.8 4.4 5.2 6.6 4 9.2 4.6 12 7c2.8-2.4 5.4-3 7.6-1.8 2.8 1.6 3.4 5 1.6 7.7C18.7 16.7 12 21 12 21z" fill="currentColor"/></svg>
+                        <span>Favoritos</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="barra-rodape">
+                <p class="barra-dica">Catálogo, metas, anotações e favoritos em um só lugar.</p>
+            </div>
+        </aside>
+
+        <div class="app-principal">
+            <main id="conteudo" class="conteudo">
+                <div id="painel-acervo" class="aba-painel ativo" role="tabpanel" aria-labelledby="aba-acervo">
+                    <section class="painel" aria-labelledby="titulo-formulario">
+                        <div class="painel-cabeca">
+                            <h2 id="titulo-formulario">Fichário</h2>
+                        </div>
+
+                        <div class="busca">
+                            <label for="busca-titulo">Nome do livro</label>
+                            <div class="busca-linha">
+                                <input id="busca-titulo" type="search" maxlength="150" placeholder="Ex.: Dom Casmurro" autocomplete="off">
+                                <button type="button" id="botao-buscar" class="secundario">Buscar</button>
+                            </div>
+                            <div id="resultados-busca" class="resultados" hidden></div>
+                            <div id="mais-resultados" class="mais-resultados" hidden>
+                                <button type="button" id="botao-mais" class="secundario">Carregar mais</button>
+                            </div>
+                        </div>
+
+                        <form id="form-livro" novalidate>
+                            <div class="selecao">
+                                <div class="capa-preview" id="capa-preview">
+                                    <img id="capa-imagem" alt="" hidden referrerpolicy="no-referrer">
+                                    <span id="capa-legenda" class="capa-legenda">Sem capa</span>
+                                </div>
+                                <div class="selecao-texto">
+                                    <p class="opcional">Nome do livro</p>
+                                    <p id="titulo-selecionado" class="titulo-selecionado">Nenhum livro selecionado</p>
+                                    <div id="opcoes-capa" class="opcoes-capa" hidden>
+                                        <p class="opcional">Escolha a capa</p>
+                                        <div id="grade-capas" class="grade-capas"></div>
+                                    </div>
+                                    <button type="submit" id="botao-salvar" class="primario" disabled>Salvar no acervo</button>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="painel" aria-labelledby="titulo-lista">
+                        <div class="painel-cabeca lista-cabeca">
+                            <h2 id="titulo-lista">Acervo</h2>
+                            <p id="total-livros" class="contador">0 livros</p>
+                        </div>
+                        <div class="busca-catalogo">
+                            <div class="acoes-catalogo">
+                                <button type="button" id="botao-catalogo" class="secundario">Buscar livros catalogados</button>
+                                <div class="modo-exibicao" role="group" aria-label="Modo de exibição">
+                                    <button type="button" id="modo-grade" class="modo-botao ativo" aria-pressed="true">Grade</button>
+                                    <button type="button" id="modo-lista" class="modo-botao" aria-pressed="false">Lista</button>
+                                </div>
+                            </div>
+                            <div id="painel-catalogo" hidden>
+                                <label for="termo-catalogo">Buscar no acervo</label>
+                                <input id="termo-catalogo" type="search" maxlength="150" placeholder="Nome, autor, ISBN ou editora" autocomplete="off">
+                            </div>
+                        </div>
+                        <div id="lista-livros" class="grade-acervo">
+                            <p class="vazio">Carregando acervo...</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="painel-autores" class="aba-painel" role="tabpanel" aria-labelledby="aba-autores" hidden>
+                    <section class="painel painel-largo" aria-labelledby="titulo-autores">
+                        <div class="painel-cabeca">
+                            <h2 id="titulo-autores">Autores e Wikipedia</h2>
+                            <p class="modo">Busque um escritor ou escolha um autor já cadastrado no acervo. A biografia vem da Wikipedia em português.</p>
+                        </div>
+
+                        <div class="busca">
+                            <label for="busca-autor">Nome do autor</label>
+                            <div class="busca-linha">
+                                <input id="busca-autor" type="search" maxlength="150" placeholder="Ex.: Machado de Assis" autocomplete="off">
+                                <button type="button" id="botao-buscar-autor" class="secundario">Buscar biografia</button>
+                            </div>
+                        </div>
+
+                        <div class="autores-layout">
+                            <aside class="autores-lista-painel" aria-labelledby="titulo-autores-acervo">
+                                <h3 id="titulo-autores-acervo">No acervo</h3>
+                                <p id="total-autores" class="contador">0 autores</p>
+                                <div id="lista-autores" class="lista-autores">
+                                    <p class="vazio">Carregando autores...</p>
+                                </div>
+                            </aside>
+
+                            <article id="biografia-autor" class="biografia" aria-live="polite">
+                                <p class="vazio">Selecione um autor do acervo ou busque um nome para ver a biografia.</p>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="painel-metas" class="aba-painel" role="tabpanel" aria-labelledby="aba-metas" hidden>
+                    <section class="painel painel-largo" aria-labelledby="titulo-metas">
+                        <div class="painel-cabeca lista-cabeca">
+                            <div>
+                                <h2 id="titulo-metas">Metas de leitura</h2>
+                                <p class="modo">Acompanhe seu progresso e etiquete os livros como Quero ler, Lendo ou Lido.</p>
+                            </div>
+                            <p id="resumo-metas" class="contador">0 etiquetados</p>
+                        </div>
+
+                        <div class="meta-anual" aria-labelledby="titulo-meta-anual">
+                            <div class="meta-anual-cabeca">
+                                <div class="meta-anual-titulo">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 3a7 7 0 1 1-7 7 7 7 0 0 1 7-7zm0 3a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 2.5A1.5 1.5 0 1 1 10.5 12 1.5 1.5 0 0 1 12 10.5z" fill="currentColor"/></svg>
+                                    <h3 id="titulo-meta-anual">Meta <span id="meta-ano">2026</span></h3>
+                                </div>
+                                <button type="button" id="editar-meta" class="link-editar">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.2V20h2.8l8.2-8.2-2.8-2.8L4 17.2zm13.1-9.5 1.4-1.4a1 1 0 0 1 1.4 0l1.4 1.4a1 1 0 0 1 0 1.4l-1.4 1.4-2.8-2.8z" fill="currentColor"/></svg>
+                                    Editar
+                                </button>
+                            </div>
+                            <p class="meta-anual-numero"><strong id="meta-lidos">0</strong> de <strong id="meta-alvo">25</strong> livros</p>
+                            <div class="barra-progresso" aria-hidden="true">
+                                <div id="meta-barra" class="barra-progresso-preenchida" style="width: 0%"></div>
+                            </div>
+                            <p id="meta-faltam" class="meta-anual-status">Defina uma meta para acompanhar seu ano de leitura.</p>
+                            <div id="form-meta" class="form-meta" hidden>
+                                <label for="input-meta">Quantos livros você quer ler neste ano?</label>
+                                <div class="busca-linha">
+                                    <input id="input-meta" type="number" min="1" max="500" step="1" value="25">
+                                    <button type="button" id="salvar-meta" class="primario">Salvar meta</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-leitura" aria-labelledby="titulo-stats">
+                            <h3 id="titulo-stats" class="stats-titulo">Estatísticas de leitura</h3>
+                            <div class="stats-grade">
+                                <article class="stat-card">
+                                    <span class="stat-icone" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24"><path d="M4 5h7v14H5a1 1 0 0 1-1-1V5zm9 0h7v13a1 1 0 0 1-1 1h-6V5z" fill="currentColor"/></svg>
+                                    </span>
+                                    <div>
+                                        <p id="stat-lidos" class="stat-valor">0</p>
+                                        <p class="stat-rotulo">Lidos</p>
+                                    </div>
+                                </article>
+                                <article class="stat-card">
+                                    <span class="stat-icone" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z" fill="currentColor"/></svg>
+                                    </span>
+                                    <div>
+                                        <p id="stat-lendo" class="stat-valor">0</p>
+                                        <p class="stat-rotulo">Lendo</p>
+                                    </div>
+                                </article>
+                                <article class="stat-card">
+                                    <span class="stat-icone" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24"><path d="M6 3h9a2 2 0 0 1 2 2v14H8a2 2 0 0 0-2 2V5a2 2 0 0 1 2-2zm2 4h7v2H8V7zm0 4h7v2H8v-2zm0 4h5v2H8v-2z" fill="currentColor"/></svg>
+                                    </span>
+                                    <div>
+                                        <p id="stat-paginas" class="stat-valor">0</p>
+                                        <p class="stat-rotulo">Páginas</p>
+                                    </div>
+                                </article>
+                                <article class="stat-card">
+                                    <span class="stat-icone" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3zm1 1.1V12l5.2 3.1-1 1.7L11 13V4.1h2z" fill="currentColor"/></svg>
+                                    </span>
+                                    <div>
+                                        <p id="stat-quero" class="stat-valor">0</p>
+                                        <p class="stat-rotulo">Quero ler</p>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+
+                        <div class="metas-colunas">
+                            <section class="meta-coluna" aria-labelledby="meta-quero">
+                                <div class="meta-cabeca">
+                                    <h3 id="meta-quero">Quero ler</h3>
+                                    <span id="contagem-quero_ler" class="selo-meta">0</span>
+                                </div>
+                                <div id="coluna-quero_ler" class="meta-lista"></div>
+                            </section>
+                            <section class="meta-coluna" aria-labelledby="meta-lendo">
+                                <div class="meta-cabeca">
+                                    <h3 id="meta-lendo">Lendo</h3>
+                                    <span id="contagem-lendo" class="selo-meta">0</span>
+                                </div>
+                                <div id="coluna-lendo" class="meta-lista"></div>
+                            </section>
+                            <section class="meta-coluna" aria-labelledby="meta-lido">
+                                <div class="meta-cabeca">
+                                    <h3 id="meta-lido">Lido</h3>
+                                    <span id="contagem-lido" class="selo-meta">0</span>
+                                </div>
+                                <div id="coluna-lido" class="meta-lista"></div>
+                            </section>
+                            <section class="meta-coluna" aria-labelledby="meta-sem">
+                                <div class="meta-cabeca">
+                                    <h3 id="meta-sem">Sem etiqueta</h3>
+                                    <span id="contagem-sem" class="selo-meta">0</span>
+                                </div>
+                                <div id="coluna-sem" class="meta-lista"></div>
+                            </section>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="painel-anotacoes" class="aba-painel" role="tabpanel" aria-labelledby="aba-anotacoes" hidden>
+                    <section class="painel painel-largo" aria-labelledby="titulo-anotacoes">
+                        <div class="painel-cabeca lista-cabeca">
+                            <div>
+                                <h2 id="titulo-anotacoes">Anotações</h2>
+                                <p class="modo">Registre impressões e avalie com estrelas os livros marcados como lidos.</p>
+                            </div>
+                            <p id="total-anotacoes" class="contador">0 livros lidos</p>
+                        </div>
+                        <div id="lista-anotacoes" class="lista-anotacoes">
+                            <p class="vazio">Nenhum livro marcado como lido ainda.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="painel-favoritos" class="aba-painel" role="tabpanel" aria-labelledby="aba-favoritos" hidden>
+                    <section class="painel painel-largo" aria-labelledby="titulo-favoritos">
+                        <div class="painel-cabeca lista-cabeca">
+                            <div>
+                                <h2 id="titulo-favoritos">Favoritos</h2>
+                                <p class="modo">Livros que você destacou com o coração no acervo.</p>
+                            </div>
+                            <p id="total-favoritos" class="contador">0 favoritos</p>
+                        </div>
+                        <div id="lista-favoritos" class="grade-acervo">
+                            <p class="vazio">Nenhum favorito ainda. Use o coração nos livros cadastrados.</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+    <dialog id="ficha-detalhe" class="ficha">
+        <article class="detalhe">
+            <div class="capa-detalhe">
+                <img id="detalhe-capa" alt="" hidden referrerpolicy="no-referrer">
+                <span id="detalhe-sem-capa" class="capa-legenda">Sem capa</span>
+            </div>
+            <div>
+                <div class="detalhe-cabeca">
+                    <h2 id="detalhe-titulo"></h2>
+                    <button type="button" id="detalhe-favorito" class="favorito-botao" aria-pressed="false" title="Favoritar" aria-label="Favoritar">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.7-4.3-9.2-8.1C1 10.2 1.6 6.8 4.4 5.2 6.6 4 9.2 4.6 12 7c2.8-2.4 5.4-3 7.6-1.8 2.8 1.6 3.4 5 1.6 7.7C18.7 16.7 12 21 12 21z" fill="currentColor"/></svg>
+                    </button>
+                </div>
+                <dl>
+                    <div><dt>Autor</dt><dd id="detalhe-autor"></dd></div>
+                    <div><dt>Editora</dt><dd id="detalhe-editora"></dd></div>
+                    <div><dt>Ano de publicação</dt><dd id="detalhe-ano"></dd></div>
+                    <div><dt>Edição</dt><dd id="detalhe-edicao"></dd></div>
+                    <div><dt>ISBN</dt><dd id="detalhe-isbn"></dd></div>
+                    <div><dt>Páginas</dt><dd id="detalhe-paginas"></dd></div>
+                    <div><dt>Gênero</dt><dd id="detalhe-genero"></dd></div>
+                    <div>
+                        <dt>Meta de leitura</dt>
+                        <dd>
+                            <div id="detalhe-status" class="status-grupo" role="group" aria-label="Status de leitura"></div>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Sinopse</dt>
+                        <dd>
+                            <textarea id="detalhe-descricao" class="sinopse-edicao" rows="7" maxlength="2000"></textarea>
+                        </dd>
+                    </div>
+                </dl>
+                <div class="acoes">
+                    <button type="button" id="fechar-detalhe" class="secundario">Fechar</button>
+                    <button type="button" id="salvar-sinopse" class="primario">Salvar sinopse</button>
+                    <button type="button" id="excluir-detalhe" class="perigo">Excluir</button>
+                </div>
+            </div>
+        </article>
+    </dialog>
+
+    <dialog id="confirma-exclusao">
+        <form method="dialog">
+            <h2>Excluir livro</h2>
+            <p id="confirma-texto"></p>
+            <div class="acoes">
+                <button type="button" id="cancelar-exclusao" class="secundario">Cancelar</button>
+                <button type="button" id="confirmar-exclusao" class="perigo">Excluir</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="js/app.js?v=5"></script>
+</body>
+</html>
